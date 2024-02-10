@@ -3,6 +3,8 @@ import cookie from "@fastify/cookie"
 import { createPoll } from "./routes/create-poll";
 import { getPoll } from "./routes/get-polls";
 import { VoteOnPoll } from "./routes/vote-on-poll";
+import { fastifyWebsocket } from "@fastify/websocket";
+
 
 const app = fastify()
 
@@ -10,6 +12,8 @@ app.register(cookie, {
   secret: "poll-app-nlw",
   hook: 'onRequest',
 })
+
+app.register(fastifyWebsocket)
 
 app.register(createPoll)
 app.register(getPoll)

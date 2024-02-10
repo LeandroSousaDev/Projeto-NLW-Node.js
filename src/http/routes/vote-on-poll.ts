@@ -2,6 +2,8 @@ import { FastifyInstance } from "fastify";
 import z from "zod";
 import { randomUUID } from "node:crypto"
 import { prisma } from "../../lib/prisma";
+import { redis } from "../../lib/redis";
+import { voting } from "../utils/vote-pub-sub";
 
 
 export async function VoteOnPoll(app: FastifyInstance) {
@@ -34,10 +36,18 @@ export async function VoteOnPoll(app: FastifyInstance) {
                         id: userVotePoll.id
                     }
                 })
+
+                const votes = await redis.zincrby(pollId, -1, userVotePoll.pollOptionId)
+
+                voting.publish(pollId, {
+                    pollOptionId,
+                    votes: Number(votes)
+                })
+
+
             } else if (userVotePoll) {
                 return reply.status(400).send({ message: "voce ja votou nesta enquete" })
             }
-
         }
 
         if (!sessionID) {
@@ -57,6 +67,13 @@ export async function VoteOnPoll(app: FastifyInstance) {
                 pollId,
                 pollOptionId,
             }
+        })
+
+        const votes = await redis.zincrby(pollId, 1, pollOptionId)
+
+        voting.publish(pollId, {
+            pollOptionId,
+            votes: Number(votes)
         })
 
         return reply.status(201).send()
