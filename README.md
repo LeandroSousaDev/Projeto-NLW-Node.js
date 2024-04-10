@@ -1,82 +1,121 @@
-# pass.in
+![Cover](./.github/cover.png)
 
-O pass.in é uma aplicação de **gestão de participantes em eventos presenciais**. 
+# NLW Expert (Node.js)
 
-A ferramenta permite que o organizador cadastre um evento e abra uma página pública de inscrição.
+A real-time voting system where users can create a poll and other users can cast their votes. The system generates a ranking among the options and updates the votes in real-time.
 
-Os participantes inscritos podem emitir uma credencial para check-in no dia do evento.
+## Requisites
 
-O sistema fará um scan da credencial do participante para permitir a entrada no evento.
+- Docker;
+- Node.js;
 
-## Requisitos
+## Setup
 
-### Requisitos funcionais
+- Clone the repository;
+- Install dependencies (`npm install`);
+- Setup PostgreSQL and Redis (`docker compose up -d`);
+- Copy `.env.example` file (`cp .env.example .env`);
+- Run application (`npm run dev`);
+- Test it! (I personally recommend testing with [Hoppscotch](https://hoppscotch.io/)).
 
-- [x] O organizador deve poder cadastrar um novo evento;
-- [x] O organizador deve poder visualizar dados de um evento;
-- [x] O organizador deve poser visualizar a lista de participantes; 
-- [x] O participante deve poder se inscrever em um evento;
-- [x] O participante deve poder visualizar seu crachá de inscrição;
-- [x] O participante deve poder realizar check-in no evento;
+## HTTP
 
-### Regras de negócio
+### POST `/polls`
 
-- [x] O participante só pode se inscrever em um evento uma única vez;
-- [x] O participante só pode se inscrever em eventos com vagas disponíveis;
-- [x] O participante só pode realizar check-in em um evento uma única vez;
+Create a new poll.
 
-### Requisitos não-funcionais
+#### Request body
 
-- [x] O check-in no evento será realizado através de um QRCode;
-
-## Documentação da API (Swagger)
-
-Para documentação da API, acesse o link: https://nlw-unite-nodejs.onrender.com/docs
-
-## Banco de dados
-
-Nessa aplicação vamos utilizar banco de dados relacional (SQL). Para ambiente de desenvolvimento seguiremos com o SQLite pela facilidade do ambiente.
-
-### Diagrama ERD
-
-<img src=".github/erd.svg" width="600" alt="Diagrama ERD do banco de dados" />
-
-### Estrutura do banco (SQL)
-
-```sql
--- CreateTable
-CREATE TABLE "events" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "title" TEXT NOT NULL,
-    "details" TEXT,
-    "slug" TEXT NOT NULL,
-    "maximum_attendees" INTEGER
-);
-
--- CreateTable
-CREATE TABLE "attendees" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "event_id" TEXT NOT NULL,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "attendees_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "events" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
--- CreateTable
-CREATE TABLE "check_ins" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "attendeeId" INTEGER NOT NULL,
-    CONSTRAINT "check_ins_attendeeId_fkey" FOREIGN KEY ("attendeeId") REFERENCES "attendees" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "events_slug_key" ON "events"("slug");
-
--- CreateIndex
-CREATE UNIQUE INDEX "attendees_event_id_email_key" ON "attendees"("event_id", "email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "check_ins_attendeeId_key" ON "check_ins"("attendeeId");
+```json
+{
+  "title": "Qual a melhor linguagem de programação?",
+  "options": [
+    "JavaScript",
+    "Java",
+    "PHP",
+    "C#"
+  ]
+}
 ```
+
+#### Response body
+
+```json
+{
+  "pollId": "194cef63-2ccf-46a3-aad1-aa94b2bc89b0"
+}
+```
+
+### GET `/polls/:pollId`
+
+Return data from a single poll.
+
+#### Response body
+
+```json
+{
+	"poll": {
+		"id": "e4365599-0205-4429-9808-ea1f94062a5f",
+		"title": "Qual a melhor linguagem de programação?",
+		"options": [
+			{
+				"id": "4af3fca1-91dc-4c2d-b6aa-897ad5042c84",
+				"title": "JavaScript",
+				"score": 1
+			},
+			{
+				"id": "780b8e25-a40e-4301-ab32-77ebf8c79da8",
+				"title": "Java",
+				"score": 0
+			},
+			{
+				"id": "539fa272-152b-478f-9f53-8472cddb7491",
+				"title": "PHP",
+				"score": 0
+			},
+			{
+				"id": "ca1d4af3-347a-4d77-b08b-528b181fe80e",
+				"title": "C#",
+				"score": 0
+			}
+		]
+	}
+}
+```
+
+### POST `/polls/:pollId/votes`
+
+Add a vote to specific poll.
+
+#### Request body
+
+```json
+{
+  "pollOptionId": "31cca9dc-15da-44d4-ad7f-12b86610fe98"
+}
+```
+
+## WebSockets
+
+### ws `/polls/:pollId/results`
+
+#### Message
+
+```json
+{
+  "pollOptionId": "da9601cc-0b58-4395-8865-113cbdc42089",
+  "votes": 2
+}
+```
+<!--START_SECTION:footer-->
+
+<br />
+<br />
+
+<p align="center">
+  <a href="https://discord.gg/rocketseat" target="_blank">
+    <img align="center" src="https://storage.googleapis.com/golden-wind/comunidade/rodape.svg" alt="banner"/>
+  </a>
+</p>
+
+<!--END_SECTION:footer-->
